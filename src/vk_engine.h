@@ -14,6 +14,13 @@ public:
 	VkPhysicalDevice _chosenGPU;// GPU chosen as the default device
 	VkDevice _device; // Vulkan device for commands
 	VkSurfaceKHR _surface;// Vulkan window surface
+	//Swapchain
+	VkSwapchainKHR _swapchain;
+	VkFormat _swapchainImageFormat;
+
+	std::vector<VkImage> _swapchainImages;
+	std::vector<VkImageView> _swapchainImageViews;
+	VkExtent2D _swapchainExtent;
 
 	void init_vulkan();
 	void init_swapchain();
@@ -41,14 +48,22 @@ public:
 	//run main loop
 	void run();
 	
-	VkSwapchainKHR _swapchain;
-	VkFormat _swapchainImageFormat;
+	FrameData _frames[FRAME_OVERLAP];
 
-	std::vector<VkImage> _swapchainImages;
-	std::vector<VkImageView> _swapchainImageViews;
-	VkExtent2D _swapchainExtent;
+	FrameData& get_current_frame() { return _frames[_frameNumber % FRAME_OVERLAP]; };
+
+	VkQueue _graphicsQueue;
+	uint32_t _graphicsQueueFamily;
 
 private: 
 	void create_swapchain(uint32_t width, uint32_t height);
 	void destroy_swapchain();
 };
+
+struct FrameData {
+
+	VkCommandPool _commandPool;
+	VkCommandBuffer _mainCommandBuffer;
+};
+
+constexpr unsigned int FRAME_OVERLAP = 2;
