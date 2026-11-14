@@ -5,6 +5,14 @@
 
 #include <vk_types.h>
 
+struct FrameData {
+
+	VkCommandPool _commandPool;
+	VkCommandBuffer _mainCommandBuffer;
+};
+
+constexpr unsigned int FRAME_OVERLAP = 2;
+
 class VulkanEngine {
 public:
 
@@ -59,11 +67,3 @@ private:
 	void create_swapchain(uint32_t width, uint32_t height);
 	void destroy_swapchain();
 };
-
-struct FrameData {
-
-	VkCommandPool _commandPool;
-	VkCommandBuffer _mainCommandBuffer;
-};
-
-constexpr unsigned int FRAME_OVERLAP = 2;
