@@ -50,18 +50,22 @@ void VulkanEngine::init()
 void VulkanEngine::cleanup()
 {
 	if (_isInitialized) {
-		for (int i = 0; i < FRAME_OVERLAP; i++) {
-	
-		//already written from before
-		vkDestroyCommandPool(_device, _frames[i]._commandPool, nullptr);
-
-		//destroy sync objects
-		vkDestroyFence(_device, _frames[i]._renderFence, nullptr);
-		vkDestroySemaphore(_device, _frames[i]._renderSemaphore, nullptr);
-		vkDestroySemaphore(_device ,_frames[i]._swapchainSemaphore, nullptr);
-	}
-	
         vkDeviceWaitIdle(_device);
+
+		for (int i = 0; i < FRAME_OVERLAP; i++) {
+		
+			//already written from before
+			vkDestroyCommandPool(_device, _frames[i]._commandPool, nullptr);
+
+			//destroy sync objects
+			vkDestroyFence(_device, _frames[i]._renderFence, nullptr);
+			vkDestroySemaphore(_device, _frames[i]._renderSemaphore, nullptr);
+			vkDestroySemaphore(_device ,_frames[i]._swapchainSemaphore, nullptr);
+
+			_frames[i]._deletionQueue.flush();
+		}
+		_mainDeletionQueue.flush();
+	
 
         for (int i = 0; i < FRAME_OVERLAP; i++) {
             vkDestroyCommandPool(_device, _frames[i]._commandPool, nullptr);
@@ -93,6 +97,7 @@ void VulkanEngine::draw()
 	VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
 	VK_CHECK(vkResetFences(_device, 1, &get_current_frame()._renderFence));
 
+	get_current_frame()._deletionQueue.flush();
 	//request image from the swapchain. If none available, waits.
 	//swapchain images get queued for commands, get rendered into, then are displayed on screen.
 	//Theres usually 3 at once, one for the CPU to work with while the GPU works with the second, and the third is displayed.
