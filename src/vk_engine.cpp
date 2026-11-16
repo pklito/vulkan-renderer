@@ -8,6 +8,9 @@
 #include <vk_initializers.h>
 #include <vk_types.h>
 
+#define VMA_IMPLEMENTATION
+#include "vk_mem_alloc.h"
+
 #include <iostream>
 #include <chrono>
 #include <thread>
@@ -259,6 +262,18 @@ void VulkanEngine::init_vulkan()
 	_graphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
 
     std::cout << "Chosen GPU: " << physicalDevice.name << std::endl;
+
+	// initialize the memory allocator
+    VmaAllocatorCreateInfo allocatorInfo = {};
+    allocatorInfo.physicalDevice = _chosenGPU;
+    allocatorInfo.device = _device;
+    allocatorInfo.instance = _instance;
+    allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+    vmaCreateAllocator(&allocatorInfo, &_allocator);
+
+    _mainDeletionQueue.push_function([&]() {
+        vmaDestroyAllocator(_allocator);
+    });
 }
 
 void VulkanEngine::init_swapchain()

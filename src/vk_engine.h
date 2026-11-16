@@ -55,6 +55,8 @@ public:
 
 	DeletionQueue _mainDeletionQueue;
 
+	VmaAllocator _allocator;
+	
 	void init_vulkan();
 	void init_swapchain();
 	void init_commands();
