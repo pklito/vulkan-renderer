@@ -81,20 +81,28 @@ void VulkanEngine::cleanup()
 
 void VulkanEngine::draw()
 {
-	// wait until the gpu has finished rendering the last frame. Timeout of 1
-	// second
+	/*
+	TLDR: swapchain has 3 images usually, one to display, one for the GPU to work on, one for the CPU to prepare (queue).
+		we have two frames, one holds the commands for the GPU, one the CPU is making the commands rn for.
+		when the GPU is done rendering, it releases the fence, so the cpu can reuse those command pools to make a new task.
+		Anything using cmd is the commands being sent to the gpu.
+		we push a Submit and a Present onto the queue, and work on the next frame CPU logic.
+	*/
+
+	// GPU finished rendering the frame on this swapchain frame already.
 	VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
 	VK_CHECK(vkResetFences(_device, 1, &get_current_frame()._renderFence));
 
-	//request image from the swapchain
+	//request image from the swapchain. If none available, waits.
+	//swapchain images get queued for commands, get rendered into, then are displayed on screen.
+	//Theres usually 3 at once, one for the CPU to work with while the GPU works with the second, and the third is displayed.
 	uint32_t swapchainImageIndex;
 	VK_CHECK(vkAcquireNextImageKHR(_device, _swapchain, 1000000000, get_current_frame()._swapchainSemaphore, nullptr, &swapchainImageIndex));
 
-	//naming it cmd for shorter writing
 	VkCommandBuffer cmd = get_current_frame()._mainCommandBuffer;
 
-	// now that we are sure that the commands finished executing, we can safely
-	// reset the command buffer to begin recording again.
+	// now that we are sure that the commands finished executing after the fence, we can record new commands for this frame.
+	// code should run without this since we will use VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT.
 	VK_CHECK(vkResetCommandBuffer(cmd, 0));
 
 	//begin the command buffer recording. We will use this command buffer exactly once, so we want to let vulkan know that
@@ -106,6 +114,7 @@ void VulkanEngine::draw()
 	//make the swapchain image into writeable mode before rendering
 	vkutil::transition_image(cmd, _swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
+
 	//make a clear-color from frame number. This will flash with a 120 frame period.
 	VkClearColorValue clearValue;
 	float flash = std::abs(std::sin(_frameNumber / 120.f));
@@ -116,10 +125,9 @@ void VulkanEngine::draw()
 	//clear image
 	vkCmdClearColorImage(cmd, _swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, &clearValue, 1, &clearRange);
 
-	//make the swapchain image into presentable mode
+	//make image presentable format
 	vkutil::transition_image(cmd, _swapchainImages[swapchainImageIndex],VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-	//finalize the command buffer (we can no longer add commands, but it can now be executed)
 	VK_CHECK(vkEndCommandBuffer(cmd));
 	VkCommandBufferSubmitInfo cmdinfo = vkinit::command_buffer_submit_info(cmd);	
 	
