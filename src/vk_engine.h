@@ -39,6 +39,9 @@ constexpr unsigned int FRAME_OVERLAP = 2;
 class VulkanEngine {
 public:
 
+//draw resources
+	AllocatedImage _drawImage;
+	VkExtent2D _drawExtent;
 	//Instances:
 	VkInstance _instance;// Vulkan library handle
 	VkDebugUtilsMessengerEXT _debug_messenger;// Vulkan debug output handle
@@ -79,7 +82,7 @@ public:
 
 	//draw loop
 	void draw();
-
+	void draw_background(VkCommandBuffer cmd);
 	//run main loop
 	void run();
 	
