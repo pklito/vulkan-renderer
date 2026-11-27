@@ -59,7 +59,7 @@ public:
 	DeletionQueue _mainDeletionQueue;
 
 	VmaAllocator _allocator;
-	
+
 	void init_vulkan();
 	void init_swapchain();
 	void init_commands();
@@ -83,6 +83,8 @@ public:
 	//draw loop
 	void draw();
 	void draw_background(VkCommandBuffer cmd);
+	void draw_geometry(VkCommandBuffer cmd);
+
 	//run main loop
 	void run();
 	
@@ -94,6 +96,11 @@ public:
 	uint32_t _graphicsQueueFamily;
 
 private: 
+
+	VkPipelineLayout _trianglePipelineLayout;
+VkPipeline _trianglePipeline;
+	void init_pipelines();
+void init_triangle_pipeline();
 	void create_swapchain(uint32_t width, uint32_t height);
 	void destroy_swapchain();
 };
